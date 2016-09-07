@@ -1,6 +1,7 @@
 package adabot
 
 import (
+	"log"
 	"time"
 
 	"github.com/hybridgroup/gobot"
@@ -8,13 +9,34 @@ import (
 	"github.com/hybridgroup/gobot/platforms/raspi"
 )
 
+var (
+	// Min pulse length out of 4096
+	servoMin = 150
+	// Max pulse length out of 4096
+	servoMax = 700
+	// Limiting the max this servo can rotate (in deg)
+	maxDegree = 180
+	// Number of degrees to increase per call
+	degIncrease       = 10
+	yawDeg            = 90
+	pitchDeg          = 90
+	yawChannel   byte = 1
+	pitchChannel byte = 2
+)
+
+func degree2pulse(deg int) int32 {
+	pulse := servoMin
+	pulse += ((servoMax - servoMin) / maxDegree) * deg
+	return int32(pulse)
+}
+
 // Robot defines a type abstracting the unexported driver type.
 type Robot struct {
 	adafruit *i2c.AdafruitMotorHatDriver
 }
 
 // NewRobot constructs and initializes an unexported driver object.
-func NewRobot() *Robot {
+func NewRobot() (*Robot, error) {
 
 	gbot := gobot.NewGobot()
 	r := raspi.NewRaspiAdaptor("raspi")
@@ -30,7 +52,30 @@ func NewRobot() *Robot {
 
 	// effectively init
 	robot.Start()
-	return &Robot{adafruit: adaFruit}
+
+	// Custom init for attached servo hat and motors
+	// Changing from the default 0x40 address because this configuration involves
+	// a Servo HAT stacked on top of a DC/Stepper Motor HAT on top of the Pi.
+	stackedHatAddr := 0x41
+
+	// update the I2C address state
+	adaFruit.SetServoHatAddress(stackedHatAddr)
+
+	freq := 60.0
+	if err := adaFruit.SetServoMotorFreq(freq); err != nil {
+		return nil, err
+	}
+	// start in the middle of the 180-deg range in both yaw and pitch
+	pulse := degree2pulse(yawDeg)
+	if err := adaFruit.SetServoMotorPulse(yawChannel, 0, pulse); err != nil {
+		return nil, err
+	}
+	pulse = degree2pulse(pitchDeg)
+	if err := adaFruit.SetServoMotorPulse(pitchChannel, 0, pulse); err != nil {
+		return nil, err
+	}
+
+	return &Robot{adafruit: adaFruit}, nil
 }
 
 // Left runs both DC-Motors in opposite directions for the given amount of time in seconds.
@@ -146,6 +191,45 @@ func (bot *Robot) Forward(sec int) (err error) {
 		return
 	}
 	if err = bot.adafruit.RunDCMotor(motorStarboard, i2c.AdafruitRelease); err != nil {
+		return
+	}
+	return
+}
+
+// Pitch will rotate the vertical oriented servo up/down based on the sign of dir.
+func (bot *Robot) Pitch(dir int) (err error) {
+	var pulse int32
+	if dir <= 0 {
+		// DEC
+		pitchDeg -= degIncrease
+		pulse = degree2pulse(pitchDeg)
+	} else {
+		// INCR
+		pitchDeg += degIncrease
+		pulse = degree2pulse(pitchDeg)
+	}
+	if err = bot.adafruit.SetServoMotorPulse(pitchChannel, 0, pulse); err != nil {
+		log.Printf(err.Error())
+		return
+	}
+	return
+}
+
+// Yaw will rotate the horizontal oriented servo left/right based on the sign of dir.
+func (bot *Robot) Yaw(dir int) (err error) {
+
+	var pulse int32
+	if dir <= 0 {
+		// DEC
+		yawDeg -= degIncrease
+		pulse = degree2pulse(yawDeg)
+	} else {
+		// INCR
+		yawDeg += degIncrease
+		pulse = degree2pulse(yawDeg)
+	}
+	if err = bot.adafruit.SetServoMotorPulse(yawChannel, 0, pulse); err != nil {
+		log.Printf(err.Error())
 		return
 	}
 	return

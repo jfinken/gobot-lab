@@ -14,12 +14,6 @@ type controlFunc struct {
 }
 type Env map[Var]controlFunc
 
-/*	// Map of function name to func
-	funcs := map[string]fn{
-		"sin": math.Sin,
-	}
-	return funcs[c.fn](c.args[0].eval(env))
-*/
 // An Expr is an expression to command the robot
 type Expr interface {
 	eval(env Env)
@@ -41,9 +35,12 @@ func (v Var) eval(env Env) {
 
 // NewEval constructs an unexported parser object to store the Env as state.
 func NewEval() *Eval {
-	bot := NewRobot()
+	bot, err := NewRobot()
+	if err != nil {
+		log.Printf(err.Error())
+	}
 	env := Env{
-		// Robot control function map: WASD
+		// Robot control function map: WASD for treads, IJKL for camera pod
 		"w":  controlFunc{Fn: bot.Forward, Param: 1},
 		"ww": controlFunc{Fn: bot.Forward, Param: 3},
 		"a":  controlFunc{Fn: bot.Left, Param: 1},
@@ -52,6 +49,10 @@ func NewEval() *Eval {
 		"ss": controlFunc{Fn: bot.Backward, Param: 3},
 		"d":  controlFunc{Fn: bot.Right, Param: 1},
 		"dd": controlFunc{Fn: bot.Right, Param: 3},
+		"j":  controlFunc{Fn: bot.Yaw, Param: -1},
+		"l":  controlFunc{Fn: bot.Yaw, Param: 1},
+		"k":  controlFunc{Fn: bot.Pitch, Param: 1},
+		"i":  controlFunc{Fn: bot.Pitch, Param: -1},
 	}
 	p := parser{}
 	e := Eval{env: env, parser: p}
