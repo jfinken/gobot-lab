@@ -199,12 +199,10 @@ func (bot *Robot) Forward(sec int) (err error) {
 // Pitch will rotate the vertical oriented servo up/down based on the sign of dir.
 func (bot *Robot) Pitch(dir int) (err error) {
 	var pulse int32
-	if dir <= 0 {
-		// DEC
+	if dir > 0 {
 		pitchDeg -= degIncrease
 		pulse = degree2pulse(pitchDeg)
 	} else {
-		// INCR
 		pitchDeg += degIncrease
 		pulse = degree2pulse(pitchDeg)
 	}

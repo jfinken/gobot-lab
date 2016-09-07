@@ -51,8 +51,8 @@ func NewEval() *Eval {
 		"dd": controlFunc{Fn: bot.Right, Param: 3},
 		"j":  controlFunc{Fn: bot.Yaw, Param: -1},
 		"l":  controlFunc{Fn: bot.Yaw, Param: 1},
-		"k":  controlFunc{Fn: bot.Pitch, Param: 1},
-		"i":  controlFunc{Fn: bot.Pitch, Param: -1},
+		"k":  controlFunc{Fn: bot.Pitch, Param: -1},
+		"i":  controlFunc{Fn: bot.Pitch, Param: 1},
 	}
 	p := parser{}
 	e := Eval{env: env, parser: p}

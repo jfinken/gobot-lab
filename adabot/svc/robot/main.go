@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -50,6 +51,30 @@ func TreadHandler(ctx *gin.Context) {
 	}
 	ctx.String(http.StatusOK, fmt.Sprintf("dir: %s, duration: %s\n", dir, duration))
 }
+
+// ServoHandler handles requests to control the two servo motors charged with yaw/pitch
+// direction of the phone/camera pod.
+//  curl host:8181/api/v1/pod/dir/yaw/func/-1
+//  curl host:8181/api/v1/pod/dir/pitch/func/1
+func ServoHandler(ctx *gin.Context) {
+	dir := ctx.Param("dir")
+	// fn is expected to be a signed int
+	f := ctx.Param("func")
+
+	fn, err := strconv.Atoi(f)
+	if err != nil {
+		errMsg := fmt.Sprintf("PARAM: %s", err.Error())
+		ctx.String(http.StatusBadRequest, errMsg)
+		return
+	}
+	switch dir {
+	case "yaw":
+		bot.Yaw(fn)
+	case "pitch":
+		bot.Pitch(fn)
+	}
+	ctx.String(http.StatusOK, fmt.Sprintf("dir: %s, func: %d\n", dir, fn))
+}
 func main() {
 
 	router := gin.Default()
@@ -57,16 +82,22 @@ func main() {
 
 	router.GET("/health", HealthHandler)
 	router.GET("/api/v1/tread/dir/:dir/duration/:dur", TreadHandler)
+	router.GET("/api/v1/pod/dir/:dir/func/:func", ServoHandler)
 	router.LoadHTMLGlob("./html/*.html")
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
-	bot = adabot.NewRobot()
+	robot, err := adabot.NewRobot()
+	if err != nil {
+		log.Printf(err.Error())
+		return
+	}
+	bot = robot
 
 	port := ":8181"
 	fmt.Printf("Listening on %s...\n", port)
-	err := http.ListenAndServe(port, router)
+	err = http.ListenAndServe(port, router)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("Failed to listen on port(%s): %s", port, err.Error()))
 	}
