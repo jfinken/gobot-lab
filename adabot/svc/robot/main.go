@@ -55,9 +55,12 @@ func main() {
 	router := gin.Default()
 	router.Use(gin.Logger())
 
-	router.GET("/", defaultHandler)
 	router.GET("/health", HealthHandler)
 	router.GET("/api/v1/tread/dir/:dir/duration/:dur", TreadHandler)
+	router.LoadHTMLGlob("./html/*.html")
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
 
 	bot = adabot.NewRobot()
 

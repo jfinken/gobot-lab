@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+<script src="https://apis.google.com/js/platform.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<script>
+var TREAD_URL= window.location.origin+'/api/v1/tread'
+var LONG_DUR = 3;
+var SHORT_DUR= 1;
+jQuery(document).ready(function() {
+    // FORWARD
+    $('#long-fwd').click(function() {
+        $.get(TREAD_URL.concat('/dir/forward/duration/', LONG_DUR), function(data) {
+        });
+    });
+    
+    $('#short-fwd').click(function() {
+        $.get(TREAD_URL.concat('/dir/forward/duration/', SHORT_DUR), function(data) {
+        });
+    });
+
+    // LEFT
+    $('#long-left').click(function() {
+        $.get(TREAD_URL.concat('/dir/left/duration/', LONG_DUR), function(data) {
+        });
+    });
+    $('#short-left').click(function() {
+        $.get(TREAD_URL.concat('/dir/left/duration/', SHORT_DUR), function(data) {
+        });
+    });
+    
+    // RIGHT
+    $('#long-right').click(function() {
+        $.get(TREAD_URL.concat('/dir/right/duration/', LONG_DUR), function(data) {
+        });
+    });
+    $('#short-right').click(function() {
+        $.get(TREAD_URL.concat('/dir/right/duration/', SHORT_DUR), function(data) {
+        });
+    });
+    
+    // BACKWARD
+    $('#long-back').click(function() {
+        $.get(TREAD_URL.concat('/dir/backward/duration/', LONG_DUR), function(data) {
+        });
+    });
+    
+    $('#short-back').click(function() {
+        $.get(TREAD_URL.concat('/dir/backward/duration/', SHORT_DUR), function(data) {
+        });
+    });
+
+  gapi.hangout.render('hangoutholder', {
+    'render': 'createhangout',
+    'initial_apps': [{'app_id' : '184219133185', 'start_data' : 'dQw4w9WgXcQ', 'app_type' : 'ROOM_APP' }]
+  });
+});
+
+</script>
+</head>
+<body>
+
+<div data-role="page" id="pageone">
+  <div data-role="header">
+    <h1>Gobot Control</h1>
+  </div>
+
+  <div data-role="main" class="ui-content">
+  <!-- FORWARD -->
+    <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div class="ui-block-c">
+        <a id="long-fwd" href="#" class="ui-btn ui-btn-icon-notext ui-icon-arrow-u" rel="external"></a>
+      </div>
+      <div class="ui-block-d"></div>
+      <div class="ui-block-e"></div>
+    </div>
+
+   <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div class="ui-block-c">
+        <a id="short-fwd" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-u" rel="external"></a>
+      </div>
+      <div class="ui-block-d"></div>
+      <div class="ui-block-e"></div>
+    </div> 
+
+    <!-- LEFT -->
+    <div class="ui-grid-d">
+      <div class="ui-block-a">
+        <a id="long-left" href="#" class="ui-btn ui-btn-icon-notext ui-icon-arrow-l"></a>
+      </div>
+      <div class="ui-block-b">
+        <a id="short-left" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-l"></a>
+      </div>
+    
+      <!-- RIGHT -->
+      <div class="ui-block-c"></div>
+      <div class="ui-block-d">
+        <a id="short-right" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-r"></a>
+      </div>
+      <div class="ui-block-e">
+        <a id="long-right" href="#" class="ui-btn ui-btn-icon-notext ui-icon-arrow-r"></a>
+      </div>
+    </div> 
+
+    <!-- BACKWARD -->
+    <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div class="ui-block-c">
+        <a id="short-back" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-d"></a>
+      </div>
+      <div class="ui-block-d"></div>
+      <div class="ui-block-e"></div>
+    </div>
+
+   <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div class="ui-block-c">
+        <a id="long-back" href="#" class="ui-btn ui-btn-icon-notext ui-icon-arrow-d"></a>
+      </div>
+      <div class="ui-block-d"></div>
+      <div class="ui-block-e"></div>
+    </div> 
+   <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div class="ui-block-c">
+        <div id="hangoutholder"></div>
+      </div>
+      <div class="ui-block-d"></div>
+      <div class="ui-block-e"></div>
+    </div> 
+
+  </div>
+  </div>
+</body>
+</html>
+
