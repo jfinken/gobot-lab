@@ -43,10 +43,7 @@ func main() {
 		if line == "" {
 			continue
 		}
-		// evaluate
+		// evaluate and control
 		evaluator.Run(line)
-		// TODO: switch on WASD
-		//adafruitDCMotorRunner(adaFruit, dcMotor)
-		//adafruitStepperMotorRunner(adaFruit, motor)
 	}
 }

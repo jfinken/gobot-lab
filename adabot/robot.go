@@ -139,6 +139,7 @@ func (bot *Robot) Right(sec int) (err error) {
 }
 
 // Backward runs both DC-Motors backward for the given amount of time in seconds.
+// NOTE: possible bug in the driver or orientation of motors.  Back is forward.
 func (bot *Robot) Backward(sec int) (err error) {
 	motorPort := 0
 	motorStarboard := 1
@@ -150,10 +151,10 @@ func (bot *Robot) Backward(sec int) (err error) {
 		return
 	}
 	// run
-	if err = bot.adafruit.RunDCMotor(motorPort, i2c.AdafruitBackward); err != nil {
+	if err = bot.adafruit.RunDCMotor(motorPort, i2c.AdafruitForward); err != nil {
 		return
 	}
-	if err = bot.adafruit.RunDCMotor(motorStarboard, i2c.AdafruitBackward); err != nil {
+	if err = bot.adafruit.RunDCMotor(motorStarboard, i2c.AdafruitForward); err != nil {
 		return
 	}
 	// Sleep and RELEASE
@@ -168,6 +169,7 @@ func (bot *Robot) Backward(sec int) (err error) {
 }
 
 // Forward runs both DC-Motors forward for the given amount of time in seconds.
+// NOTE: possible bug in the driver or orientation of motors.  Back is forward.
 func (bot *Robot) Forward(sec int) (err error) {
 	motorPort := 0
 	motorStarboard := 1
@@ -178,11 +180,11 @@ func (bot *Robot) Forward(sec int) (err error) {
 	if err = bot.adafruit.SetDCMotorSpeed(motorStarboard, speed); err != nil {
 		return
 	}
-	// run FORWARD
-	if err = bot.adafruit.RunDCMotor(motorPort, i2c.AdafruitForward); err != nil {
+	// run
+	if err = bot.adafruit.RunDCMotor(motorPort, i2c.AdafruitBackward); err != nil {
 		return
 	}
-	if err = bot.adafruit.RunDCMotor(motorStarboard, i2c.AdafruitForward); err != nil {
+	if err = bot.adafruit.RunDCMotor(motorStarboard, i2c.AdafruitBackward); err != nil {
 		return
 	}
 	// Sleep and RELEASE

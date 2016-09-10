@@ -7,9 +7,10 @@
 <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
 <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
 <script>
-var TREAD_URL= window.location.origin+'/api/v1/tread'
-var LONG_DUR = 3;
-var SHORT_DUR= 1;
+var TREAD_URL = window.location.origin+'/api/v1/tread'
+var POD_URL   = window.location.origin+'/api/v1/pod'
+var LONG_DUR  = 3;
+var SHORT_DUR = 1;
 jQuery(document).ready(function() {
     // FORWARD
     $('#long-fwd').click(function() {
@@ -52,11 +53,31 @@ jQuery(document).ready(function() {
         $.get(TREAD_URL.concat('/dir/backward/duration/', SHORT_DUR), function(data) {
         });
     });
+    
+    // POD CONTROL
+    $('#pitch-up').click(function() {
+        $.get(POD_URL.concat('/dir/pitch/func/1'), function(data) {
+        });
+    });
+    $('#pitch-down').click(function() {
+        $.get(POD_URL.concat('/dir/pitch/func/-1'), function(data) {
+        });
+    });
+    $('#yaw-left').click(function() {
+        $.get(POD_URL.concat('/dir/yaw/func/-1'), function(data) {
+        });
+    });
+    $('#yaw-right').click(function() {
+        $.get(POD_URL.concat('/dir/yaw/func/1'), function(data) {
+        });
+    });
 
-  gapi.hangout.render('hangoutholder', {
-    'render': 'createhangout',
-    'initial_apps': [{'app_id' : '184219133185', 'start_data' : 'dQw4w9WgXcQ', 'app_type' : 'ROOM_APP' }]
-  });
+    /*
+    gapi.hangout.render('hangoutholder', {
+      'render': 'createhangout',
+      'initial_apps': [{'app_id' : '184219133185', 'start_data' : 'dQw4w9WgXcQ', 'app_type' : 'ROOM_APP' }]
+    });
+    */
 });
 
 </script>
@@ -65,11 +86,11 @@ jQuery(document).ready(function() {
 
 <div data-role="page" id="pageone">
   <div data-role="header">
-    <h1>Gobot Control</h1>
+    <h1>Tread Control</h1>
   </div>
 
   <div data-role="main" class="ui-content">
-  <!-- FORWARD -->
+  <!-- TREAD FORWARD -->
     <div class="ui-grid-d">
       <div class="ui-block-a"></div>
       <div class="ui-block-b"></div>
@@ -138,6 +159,47 @@ jQuery(document).ready(function() {
       <div class="ui-block-d"></div>
       <div class="ui-block-e"></div>
     </div> 
+
+    <!-- POD CONTROL -->
+    <div data-role="header">
+      <h1>Pod Control</h1>
+    </div>
+
+    <!-- PITCH UP -->
+    <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div class="ui-block-c">
+        <a id="pitch-up" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-u" rel="external"></a>
+      </div>
+      <div class="ui-block-d"></div>
+      <div class="ui-block-e"></div>
+    </div> 
+
+    <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <!-- YAW LEFT -->
+      <div class="ui-block-b">
+        <a id="yaw-left" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-l"></a>
+      </div>
+      <div class="ui-block-c"></div>
+      <!-- YAW RIGHT -->
+      <div class="ui-block-d">
+        <a id="yaw-right" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-r"></a>
+      </div>
+      <div class="ui-block-e"></div>
+    </div>
+
+    <!-- PITCH DOWN -->
+    <div class="ui-grid-d">
+      <div class="ui-block-a"></div>
+      <div class="ui-block-b"></div>
+      <div class="ui-block-c">
+        <a id="pitch-down" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-d"></a>
+      </div>
+      <div class="ui-block-d"></div>
+      <div class="ui-block-e"></div>
+    </div>
 
   </div>
   </div>
