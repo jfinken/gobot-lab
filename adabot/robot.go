@@ -56,25 +56,26 @@ func NewRobot() (*Robot, error) {
 	// Custom init for attached servo hat and motors
 	// Changing from the default 0x40 address because this configuration involves
 	// a Servo HAT stacked on top of a DC/Stepper Motor HAT on top of the Pi.
-	stackedHatAddr := 0x41
+	/*
+		stackedHatAddr := 0x41
 
-	// update the I2C address state
-	adaFruit.SetServoHatAddress(stackedHatAddr)
+		// update the I2C address state
+		adaFruit.SetServoHatAddress(stackedHatAddr)
 
-	freq := 60.0
-	if err := adaFruit.SetServoMotorFreq(freq); err != nil {
-		return nil, err
-	}
-	// start in the middle of the 180-deg range in both yaw and pitch
-	pulse := degree2pulse(yawDeg)
-	if err := adaFruit.SetServoMotorPulse(yawChannel, 0, pulse); err != nil {
-		return nil, err
-	}
-	pulse = degree2pulse(pitchDeg)
-	if err := adaFruit.SetServoMotorPulse(pitchChannel, 0, pulse); err != nil {
-		return nil, err
-	}
-
+		freq := 60.0
+		if err := adaFruit.SetServoMotorFreq(freq); err != nil {
+			return nil, err
+		}
+		// start in the middle of the 180-deg range in both yaw and pitch
+		pulse := degree2pulse(yawDeg)
+		if err := adaFruit.SetServoMotorPulse(yawChannel, 0, pulse); err != nil {
+			return nil, err
+		}
+		pulse = degree2pulse(pitchDeg)
+		if err := adaFruit.SetServoMotorPulse(pitchChannel, 0, pulse); err != nil {
+			return nil, err
+		}
+	*/
 	return &Robot{adafruit: adaFruit}, nil
 }
 
