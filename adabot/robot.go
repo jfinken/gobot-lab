@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/hybridgroup/gobot"
-	"github.com/hybridgroup/gobot/platforms/i2c"
-	"github.com/hybridgroup/gobot/platforms/raspi"
+	"gobot.io/x/gobot"
+	"gobot.io/x/gobot/drivers/i2c"
+	"gobot.io/x/gobot/platforms/raspi"
 )
 
 var (
@@ -38,11 +38,11 @@ type Robot struct {
 // NewRobot constructs and initializes an unexported driver object.
 func NewRobot() (*Robot, error) {
 
-	gbot := gobot.NewGobot()
-	r := raspi.NewRaspiAdaptor("raspi")
-	adaFruit := i2c.NewAdafruitMotorHatDriver(r, "adafruit")
+	gbot := gobot.NewMaster()
+	r := raspi.NewAdaptor()
+	adaFruit := i2c.NewAdafruitMotorHatDriver(r)
 
-	robot := gobot.NewRobot("adaFruitBot",
+	robot := gobot.NewRobot("adabot",
 		[]gobot.Connection{r},
 		[]gobot.Device{adaFruit},
 		nil, // nil work func
