@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/ajstarks/svgo"
-	net "github.com/jfinken/gobot-lab/adabot/render/network"
+	net "github.com/jfinken/gobot-lab/adabot/network"
 )
 
 func rn(n int) int { return rand.Intn(n) }

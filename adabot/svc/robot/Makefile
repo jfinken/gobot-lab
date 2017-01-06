@@ -1,3 +1,7 @@
+desktop:
+	# linux, amd64
+	go build -v
+
 all:
 	# Pi 3
 	GOARM=7 GOARCH=arm GOOS=linux go build -v 

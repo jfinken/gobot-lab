@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	svg "github.com/ajstarks/svgo"
 	"github.com/gin-gonic/gin"
 	"github.com/jfinken/gobot-lab/adabot"
 )
@@ -75,6 +76,18 @@ func ServoHandler(ctx *gin.Context) {
 	}
 	ctx.String(http.StatusOK, fmt.Sprintf("dir: %s, func: %d\n", dir, fn))
 }
+
+// NetworkHandler handles requests to display the road network, given the netid, in SVG.
+func NetworkHandler(ctx *gin.Context) {
+	// eventually an ID into a sqlite table for a given road network
+	_ = ctx.Param("netid")
+
+	ctx.Writer.Header().Set("Content-Type", "image/svg+xml")
+	s := svg.New(ctx.Writer)
+	s.Start(500, 500)
+	s.Circle(250, 250, 125, "fill:none;stroke:black")
+	s.End()
+}
 func main() {
 
 	router := gin.Default()
@@ -83,6 +96,7 @@ func main() {
 	router.GET("/health", HealthHandler)
 	router.GET("/api/v1/tread/dir/:dir/duration/:dur", TreadHandler)
 	router.GET("/api/v1/pod/dir/:dir/func/:func", ServoHandler)
+	router.GET("/api/v1/network/:netid", NetworkHandler)
 	router.LoadHTMLGlob("./html/*.html")
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
