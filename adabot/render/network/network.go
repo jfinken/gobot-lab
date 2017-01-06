@@ -23,25 +23,25 @@ type GobotWorld struct {
 	//	nodes map[int]*Node		// not yet used
 }
 
-// Edge type connects two Nodes with a cost
+// Edge type connects two Nodes with a cost.
 type Edge struct {
-	from *Node
-	to   *Node
-	Cost float64
+	From *Node   `json:"from_node"`
+	To   *Node   `json:"to_node"`
+	Cost float64 `json:"cost"`
 }
 
 // A Node is a place in a grid which implements Grapher.
 type Node struct {
 
 	// X and Y are the coordinates of the node.
-	X, Y int
-
+	X int `json:"x"`
+	Y int `json:"y"`
 	// array of type Edge going to other nodes
-	outTo []Edge
-
-	Label string
+	OutTo []Edge `json:"out_to"`
+	Label string `json:"lable"`
 }
 
+// AddNode constructs a new Node.
 func AddNode(x int, y int, label string) *Node {
 	t1 := new(Node)
 	t1.X = x
@@ -50,24 +50,25 @@ func AddNode(x int, y int, label string) *Node {
 	return t1
 }
 
+// AddEdge constructs a new Edge from t1 to t2.
 func AddEdge(t1, t2 *Node, cost float64) *Edge {
 	edge1 := new(Edge)
 	edge1.Cost = cost
-	edge1.from = t1
-	edge1.to = t2
+	edge1.From = t1
+	edge1.To = t2
 
-	t1.outTo = append(t1.outTo, *edge1)
+	t1.OutTo = append(t1.OutTo, *edge1)
 
 	return edge1
 }
 
-// PathNeighbors returns the neighbors of the Truck
+// PathNeighbors returns the neighbors of the Node.
 func (t *Node) PathNeighbors() []astar.Pather {
 
 	neighbors := []astar.Pather{}
 
-	for _, edgeElement := range t.outTo {
-		neighbors = append(neighbors, astar.Pather(edgeElement.to))
+	for _, edgeElement := range t.OutTo {
+		neighbors = append(neighbors, astar.Pather(edgeElement.To))
 	}
 	return neighbors
 }
@@ -75,8 +76,8 @@ func (t *Node) PathNeighbors() []astar.Pather {
 // PathNeighborCost returns the cost of the edge leading to Node.
 func (t *Node) PathNeighborCost(to astar.Pather) float64 {
 
-	for _, edgeElement := range (t).outTo {
-		if astar.Pather((edgeElement.to)) == to {
+	for _, edgeElement := range (t).OutTo {
+		if astar.Pather((edgeElement.To)) == to {
 			return edgeElement.Cost
 		}
 	}
@@ -99,6 +100,13 @@ func (t *Node) PathEstimatedCost(to astar.Pather) float64 {
 	r := float64(absX + absY)
 
 	return r
+}
+
+// GeneratePath invokes the A* path generation function and returns a
+// slice of Pather (Nodes), distance and whether or not a successful
+// path was found.
+func GeneratePath(from, to astar.Pather) (path []astar.Pather, distance float64, found bool) {
+	return astar.Path(from, to)
 }
 
 // RenderPath renders a path on top of a Goreland world.

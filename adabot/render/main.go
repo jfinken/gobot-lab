@@ -42,7 +42,9 @@ func main() {
 
 	//-------------------------------------------------------------------------
 	// Declare A* nodes and edges
-	// TODO: read json from svc
+	// TODO:
+	//	- new HTTP route: POST a network that is written to sqlite
+	//	- new HTTP route: that given a route-ID, reads sqlite, serves up SVG
 	//-------------------------------------------------------------------------
 	scale := 10
 	nStart := net.AddNode(1*scale, 1*scale, "START")
@@ -84,6 +86,9 @@ func main() {
 	net.AddEdge(n8, n9, 1)
 	net.AddEdge(n7, n9, diagonalCost)
 	net.AddEdge(n9, nEnd, 1)
+
+	// Generate the path.  p is the slice of nodes
+	//p, dist, found := net.GeneratePath(nStart, nEnd)
 
 	//-------------------------------------------------------------------------
 	// Render nodes and edges SVG
