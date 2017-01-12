@@ -1,6 +1,12 @@
 package network
 
 import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"crypto/md5"
+
 	"github.com/jfinken/go-astar"
 )
 
@@ -30,23 +36,29 @@ type Edge struct {
 	Cost float64 `json:"cost"`
 }
 
-// A Node is a place in a grid which implements Grapher.
+// A Node is a place in a grid which implements Pather.  ID is a unique
+// identifier auto-generated on construction.  NetID allows nodes to
+// simply be "grouped" together for the purposes of persistent storage.
+// X and Y are the coordinates of the node.  OutTo is a slice of type
+// Edge going to other nodes.
 type Node struct {
-
-	// X and Y are the coordinates of the node.
-	X int `json:"x"`
-	Y int `json:"y"`
-	// array of type Edge going to other nodes
+	ID    string
+	NetID string
+	X     int    `json:"x"`
+	Y     int    `json:"y"`
 	OutTo []Edge `json:"out_to"`
-	Label string `json:"lable"`
+	Label string `json:"label"`
 }
 
 // AddNode constructs a new Node.
-func AddNode(x int, y int, label string) *Node {
-	t1 := new(Node)
-	t1.X = x
-	t1.Y = y
-	t1.Label = label
+func AddNode(x int, y int, netID, label string) *Node {
+
+	t1 := &Node{X: x, Y: y, NetID: netID, Label: label}
+
+	now := time.Now().UnixNano()
+	data := []byte(strconv.FormatInt(now, 10))
+	t1.ID = fmt.Sprintf("%x", md5.Sum(data))[0:7]
+
 	return t1
 }
 

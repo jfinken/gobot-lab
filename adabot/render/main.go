@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math/rand"
 	"os"
 
@@ -43,26 +44,50 @@ func main() {
 	//-------------------------------------------------------------------------
 	// Declare A* nodes and edges
 	// TODO:
-	//	- new HTTP route: POST a network that is written to sqlite
-	//	- new HTTP route: that given a route-ID, reads sqlite, serves up SVG
+	//	- new HTTP route: POST a network that is written to key/value storage
+	//	- new HTTP route: that given a route-ID, reads storage, serves up SVG
 	//-------------------------------------------------------------------------
 	scale := 10
-	nStart := net.AddNode(1*scale, 1*scale, "START")
-	n1 := net.AddNode(1*scale, 2*scale, "n1")
-	n2 := net.AddNode(0*scale, 2*scale, "n2")
-	n3 := net.AddNode(2*scale, 1*scale, "n3")
-	n4 := net.AddNode(3*scale, 1*scale, "n4")
-	n5 := net.AddNode(2*scale, 2*scale, "n5")
-	n6 := net.AddNode(3*scale, 2*scale, "n6")
-	n7 := net.AddNode(2*scale, 3*scale, "n7")
-	n8 := net.AddNode(3*scale, 3*scale, "n8")
-	n9 := net.AddNode(3*scale, 4*scale, "n9")
-	nEnd := net.AddNode(3*scale, 5*scale, "END")
+	networkID := "jf_home"
+	nStart := net.AddNode(1*scale, 1*scale, networkID, "START")
+	n1 := net.AddNode(1*scale, 2*scale, networkID, "n1")
+	n2 := net.AddNode(0*scale, 2*scale, networkID, "n2")
+	n3 := net.AddNode(2*scale, 1*scale, networkID, "n3")
+	n4 := net.AddNode(3*scale, 1*scale, networkID, "n4")
+	n5 := net.AddNode(2*scale, 2*scale, networkID, "n5")
+	n6 := net.AddNode(3*scale, 2*scale, networkID, "n6")
+	n7 := net.AddNode(2*scale, 3*scale, networkID, "n7")
+	n8 := net.AddNode(3*scale, 3*scale, networkID, "n8")
+	n9 := net.AddNode(3*scale, 4*scale, networkID, "n9")
+	nEnd := net.AddNode(3*scale, 5*scale, networkID, "END")
+
+	nodes := []*net.Node{nStart, n1, n2, n3, n4, n5, n6, n7, n8, n9, nEnd}
+
+	//-------------------------------------------------------------------------
+	// POC: store and retrieve nodes
+	//-------------------------------------------------------------------------
+	store, err := net.OpenStore()
+	if err != nil {
+		log.Printf("Network Store err: %s\n", err.Error())
+	}
+	err = store.Update(nodes)
+	if err != nil {
+		log.Printf("Network Store err: %s\n", err.Error())
+	}
+	var storedNodes []*net.Node
+	err = store.Query(storedNodes, networkID)
+	if err != nil {
+		log.Printf("Network Store err: %s\n", err.Error())
+	}
+	err = store.Close()
+	if err != nil {
+		log.Printf("Network Store err: %s\n", err.Error())
+	}
+
 	// effectively set width and height relative to MAX_X, MAX_Y of Node locs
 	width := 0
 	height := 0
-	nodes := []*net.Node{nStart, n1, n2, n3, n4, n5, n6, n7, n8, n9, nEnd}
-	for _, n := range nodes {
+	for _, n := range storedNodes {
 		if width <= n.X {
 			width = n.X
 		}
