@@ -40,6 +40,6 @@ func (s *Store) Query(result []*Node, netID string) error {
 }
 
 // Close will close the backend datastore.
-func (s *Store) Close() error {
+func (s *Store) CloseStore() error {
 	return s.Close()
 }

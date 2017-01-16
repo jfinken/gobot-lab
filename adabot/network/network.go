@@ -31,9 +31,13 @@ type GobotWorld struct {
 
 // Edge type connects two Nodes with a cost.
 type Edge struct {
-	From *Node   `json:"from_node"`
-	To   *Node   `json:"to_node"`
+	ID   string `json:"key"` // London dataset-specific
+	From *Node
+	To   *Node
+	St   string  `json:"end1key"` // London dataset-specific
+	End  string  `json:"end2key"` // London dataset-specific
 	Cost float64 `json:"cost"`
+	Kind string  `json:"kind"` // London dataset-specific
 }
 
 // A Node is a place in a grid which implements Pather.  ID is a unique
@@ -42,16 +46,18 @@ type Edge struct {
 // X and Y are the coordinates of the node.  OutTo is a slice of type
 // Edge going to other nodes.
 type Node struct {
-	ID    string
+	ID    string `json:"key"` // London dataset-specific
 	NetID string
-	X     int    `json:"x"`
-	Y     int    `json:"y"`
-	OutTo []Edge `json:"out_to"`
-	Label string `json:"label"`
+	X     int     `json:"x"`
+	Y     int     `json:"y"`
+	OutTo []Edge  `json:"out_to"`
+	Label string  `json:"name"` // London dataset-specific
+	Lat   float64 `json:"latitude"`
+	Lng   float64 `json:"longitude"`
 }
 
 // AddNode constructs a new Node.
-func AddNode(x int, y int, netID, label string) *Node {
+func AddNode(x, y int, netID, label string) *Node {
 
 	t1 := &Node{X: x, Y: y, NetID: netID, Label: label}
 
