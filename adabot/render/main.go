@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"time"
 
 	"github.com/ajstarks/svgo"
 	"github.com/golang/geo/s2"
@@ -108,7 +109,7 @@ func pocStoreRetrieveNodes(nodes []*net.Node, networkID string) {
 }
 
 // POC: Unmarshal and render nodes of the London tube
-func pocUnmarshalLondon() *NetworkGraph {
+func pocUnmarshalLondon() (*NetworkGraph, *net.Node, *net.Node) {
 
 	file, e := ioutil.ReadFile("./london_tube.json")
 	if e != nil {
@@ -120,8 +121,8 @@ func pocUnmarshalLondon() *NetworkGraph {
 
 	json.Unmarshal(file, &london)
 
-	scale := 100000.0
 	// transform spherical to cartesian
+	scale := 100000.0
 	for _, node := range london.Nodes {
 		pt := s2.PointFromLatLng(s2.LatLngFromDegrees(node.Lat, node.Lng))
 		if pt.X >= 1.0 || pt.Y == 0.0 {
@@ -132,8 +133,35 @@ func pocUnmarshalLondon() *NetworkGraph {
 		// store the node at key
 		london.Graph[node.ID] = node
 	}
+	// for A* POC purposes:
+	//	- generate a random start and end node
+	//	- store the edge with the connecting nodes and assign a cost
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(s1)
+	nStart := london.Nodes[r.Intn(len(london.Nodes)-1)]
+	nEnd := london.Nodes[r.Intn(len(london.Nodes)-1)]
+	// Fascinating: given these nodes and haversine as the cost.
+	//nStart := london.Graph["290"] // West Hampstead
+	//nEnd := london.Graph["185"]   // North Wembley
 
-	return &london
+	for _, edge := range london.Edges {
+		if edge.Kind == "Connection" {
+			from := london.Graph[edge.St]
+			to := london.Graph[edge.End]
+
+			//cost := 1.0
+			// Set Cost to be the actual distance between connected nodes
+			n1 := s2.LatLngFromDegrees(from.Lat, from.Lng)
+			n2 := s2.LatLngFromDegrees(to.Lat, to.Lng)
+			cost := n1.Distance(n2).Degrees()
+
+			// AddEdge will modify the parameter Nodes.  NOTE: bidirectionality..
+			net.AddEdge(from, to, cost)
+			net.AddEdge(to, from, cost)
+		}
+	}
+
+	return &london, nStart, nEnd
 }
 func rn(n int) int { return rand.Intn(n) }
 
@@ -149,7 +177,7 @@ func main() {
 	//-------------------------------------------------------------------------
 	// POC: store and retrieve nodes of the London tube
 	//-------------------------------------------------------------------------
-	london := pocUnmarshalLondon()
+	london, nStart, nEnd := pocUnmarshalLondon()
 
 	//-------------------------------------------------------------------------
 	// POC: store and retrieve nodes
@@ -157,13 +185,14 @@ func main() {
 	//pocStoreRetrieveNodes()
 
 	// Generate the path.  p is the slice of nodes
-	//p, dist, found := net.GeneratePath(nStart, nEnd)
+	pathNodes, dist, pathFound := net.GeneratePath(nStart, nEnd)
+	fmt.Fprintf(os.Stderr, "%s to %s, dist: %f\n", nStart.Label, nEnd.Label, dist)
 
 	//-------------------------------------------------------------------------
 	// Render nodes and edges SVG
 	//-------------------------------------------------------------------------
-	width := 1024
-	height := 1024
+	width := 2048
+	height := 2048
 	vbMinX := math.MaxInt64
 	vbMinY := math.MaxInt64
 	vbMaxX := 0
@@ -191,7 +220,7 @@ func main() {
 	// draw fence
 	fenX := []int{vbMinX, vbMaxX, vbMaxX, vbMinX, vbMinX}
 	fenY := []int{vbMinY, vbMinY, vbMaxY, vbMaxY, vbMinY}
-	canvas.Polyline(fenX, fenY, `fill="none"`, `stroke="red"`, `stroke-width:3`)
+	canvas.Polyline(fenX, fenY, `fill="none"`, `stroke="white"`, `stroke-width:2`)
 
 	// EDGES
 	for _, edge := range london.Edges {
@@ -217,6 +246,30 @@ func main() {
 		// Node label
 		//canvas.Text(n.X, n.Y, n.Label, `font-size="8px"`, `fill="red"`)
 	}
+
+	// A* results
+	if pathFound {
+		nodeDim = 4.0
+		// it is an ordered path
+		for i := range pathNodes {
+			var from *net.Node
+			var to *net.Node
+			//canvas.Circle(n.(*net.Node).X, n.(*net.Node).Y, nodeDim, "fill:green")
+			if i < len(pathNodes)-1 {
+				from = pathNodes[i].(*net.Node)
+				to = pathNodes[i+1].(*net.Node)
+			} else {
+				from = pathNodes[len(pathNodes)-2].(*net.Node)
+				to = pathNodes[len(pathNodes)-1].(*net.Node)
+			}
+			canvas.Line(from.X, from.Y, to.X, to.Y, `stroke="red"`, `stroke-width:1`)
+		}
+	}
+	// Start and End nodes
+	canvas.Circle(nStart.X, nStart.Y, 4.0, "fill:green")
+	canvas.Text(nStart.X, nStart.Y, nStart.Label, `font-size="8px"`, `fill="white"`)
+	canvas.Circle(nEnd.X, nEnd.Y, 4.0, "fill:red")
+	canvas.Text(nEnd.X, nEnd.Y, nEnd.Label, `font-size="8px"`, `fill="white"`)
 	canvas.End()
 }
 func min(a, b int) int {

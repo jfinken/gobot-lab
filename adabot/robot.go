@@ -4,7 +4,6 @@ import (
 	"log"
 	"time"
 
-	"gobot.io/x/gobot"
 	"gobot.io/x/gobot/drivers/i2c"
 	"gobot.io/x/gobot/platforms/raspi"
 )
@@ -38,20 +37,30 @@ type Robot struct {
 // NewRobot constructs and initializes an unexported driver object.
 func NewRobot() (*Robot, error) {
 
-	gbot := gobot.NewMaster()
+	// Now in gobot.io 1.0: Metal Gobot
+	// 	when you want to use the individual Gobot packages yourself to have the
+	//  greatest control, or to more easily integrate Gobot functionality into
+	//  your existing Golang programs.
 	r := raspi.NewAdaptor()
+	r.Connect()
 	adaFruit := i2c.NewAdafruitMotorHatDriver(r)
+	adaFruit.Start()
 
-	robot := gobot.NewRobot("adabot",
-		[]gobot.Connection{r},
-		[]gobot.Device{adaFruit},
-		nil, // nil work func
-	)
-
-	gbot.AddRobot(robot)
-
-	// effectively init
-	robot.Start()
+	/*
+		// Workaround: now it's Metal..
+		gbot := gobot.NewMaster()
+		r := raspi.NewAdaptor()
+		adaFruit := i2c.NewAdafruitMotorHatDriver(r)
+		robot := gobot.NewRobot("adabot",
+			[]gobot.Connection{r},
+			[]gobot.Device{adaFruit},
+			nil, // nil work func
+		)
+		*
+		gbot.AddRobot(robot)
+		// effectively init
+		robot.Start()
+	*/
 
 	// Custom init for attached servo hat and motors
 	// Changing from the default 0x40 address because this configuration involves
