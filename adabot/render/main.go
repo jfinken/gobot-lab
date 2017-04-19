@@ -16,12 +16,6 @@ import (
 	net "github.com/jfinken/gobot-lab/adabot/network"
 )
 
-type NetworkGraph struct {
-	Nodes []*net.Node `json:"nodes"`
-	Edges []*net.Edge `json:"edges"`
-	Graph map[string]*net.Node
-}
-
 // POC: Declare A*-ready nodes and edges
 //		   	 E
 //			 |
@@ -49,24 +43,24 @@ type NetworkGraph struct {
 // N7 = (2, 3)
 // N8 = (3, 3)
 // N9 = (3, 4)
+/*
 func pocToyExample() []*net.Node {
 
 	//world := new(GobotWorld)
 	diagonalCost := 5.0
 
 	scale := 10
-	networkID := "jf_home"
-	nStart := net.AddNode(1*scale, 1*scale, networkID, "START")
-	n1 := net.AddNode(1*scale, 2*scale, networkID, "n1")
-	n2 := net.AddNode(0*scale, 2*scale, networkID, "n2")
-	n3 := net.AddNode(2*scale, 1*scale, networkID, "n3")
-	n4 := net.AddNode(3*scale, 1*scale, networkID, "n4")
-	n5 := net.AddNode(2*scale, 2*scale, networkID, "n5")
-	n6 := net.AddNode(3*scale, 2*scale, networkID, "n6")
-	n7 := net.AddNode(2*scale, 3*scale, networkID, "n7")
-	n8 := net.AddNode(3*scale, 3*scale, networkID, "n8")
-	n9 := net.AddNode(3*scale, 4*scale, networkID, "n9")
-	nEnd := net.AddNode(3*scale, 5*scale, networkID, "END")
+	nStart := net.AddNode(1*scale, 1*scale, "START")
+	n1 := net.AddNode(1*scale, 2*scale, "n1")
+	n2 := net.AddNode(0*scale, 2*scale, "n2")
+	n3 := net.AddNode(2*scale, 1*scale, "n3")
+	n4 := net.AddNode(3*scale, 1*scale, "n4")
+	n5 := net.AddNode(2*scale, 2*scale, "n5")
+	n6 := net.AddNode(3*scale, 2*scale, "n6")
+	n7 := net.AddNode(2*scale, 3*scale, "n7")
+	n8 := net.AddNode(3*scale, 3*scale, "n8")
+	n9 := net.AddNode(3*scale, 4*scale, "n9")
+	nEnd := net.AddNode(3*scale, 5*scale, "END")
 
 	// Create EDGES.  Note this modifies nodes.
 	net.AddEdge(nStart, n1, 1)
@@ -85,74 +79,75 @@ func pocToyExample() []*net.Node {
 	nodes := []*net.Node{nStart, n1, n2, n3, n4, n5, n6, n7, n8, n9, nEnd}
 	return nodes
 }
+*/
+// POC: store and retrieve nodes via dead-simple JSON flat files
+func pocStoreRetrieveNodes(graph *net.RawGraph, networkID string) {
 
-// POC: store and retrieve nodes via a backend key/value store
-func pocStoreRetrieveNodes(nodes []*net.Node, networkID string) {
-	store, err := net.OpenStore()
-	if err != nil {
-		log.Printf("Network Store err: %s\n", err.Error())
-	}
-	err = store.Update(nodes)
-	if err != nil {
-		log.Printf("Network Store err: %s\n", err.Error())
-	}
-	var storedNodes []*net.Node
-	err = store.Query(storedNodes, networkID)
-	if err != nil {
-		log.Printf("Network Store err: %s\n", err.Error())
-	}
-	err = store.CloseStore()
+	graph.NetID = networkID
+	err := net.StoreGraph(graph, networkID)
 	if err != nil {
 		log.Printf("Network Store err: %s\n", err.Error())
 	}
 
+	storedGraph := &net.RawGraph{}
+	err = net.LoadGraph(storedGraph, networkID)
+	if err != nil {
+		log.Printf("Network Get Store err: %s\n", err.Error())
+	}
+	log.Printf("LEN of raw Nodes in results: %d\n", len(storedGraph.Nodes))
 }
 
 // POC: Unmarshal and render nodes of the London tube
-func pocUnmarshalLondon() (*NetworkGraph, *net.Node, *net.Node) {
+func pocUnmarshalLondon() (*net.RawGraph, *net.NetworkGraph, *net.Node, *net.Node) {
 
 	file, e := ioutil.ReadFile("./london_tube.json")
 	if e != nil {
 		fmt.Printf("File error: %v\n", e)
 		os.Exit(1)
 	}
-	var london NetworkGraph
+	var rawGraph net.RawGraph
+	var london net.NetworkGraph
 	london.Graph = make(map[string]*net.Node) // type alias
 
-	json.Unmarshal(file, &london)
+	json.Unmarshal(file, &rawGraph)
 
 	// transform spherical to cartesian
 	scale := 100000.0
-	for _, node := range london.Nodes {
-		pt := s2.PointFromLatLng(s2.LatLngFromDegrees(node.Lat, node.Lng))
+	for _, rawNode := range rawGraph.Nodes {
+		pt := s2.PointFromLatLng(s2.LatLngFromDegrees(rawNode.Lat, rawNode.Lng))
 		if pt.X >= 1.0 || pt.Y == 0.0 {
 			continue
 		}
-		node.X = int(pt.X * scale)
-		node.Y = int(pt.Y * scale)
-		// store the node at key
-		london.Graph[node.ID] = node
+		// Create a processed Node
+		node := net.AddNode(int(pt.X*scale), int(pt.Y*scale), rawNode, rawNode.Name)
+
+		// store the processed node at key
+		london.Graph[rawNode.ID] = node
 	}
 	// for A* POC purposes:
 	//	- generate a random start and end node
 	//	- store the edge with the connecting nodes and assign a cost
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s1)
-	nStart := london.Nodes[r.Intn(len(london.Nodes)-1)]
-	nEnd := london.Nodes[r.Intn(len(london.Nodes)-1)]
+	rawStart := rawGraph.Nodes[r.Intn(len(rawGraph.Nodes)-1)]
+	rawEnd := rawGraph.Nodes[r.Intn(len(rawGraph.Nodes)-1)]
+
+	nStart := london.Graph[rawStart.ID]
+	nEnd := london.Graph[rawEnd.ID]
+
 	// Fascinating: given these nodes and haversine as the cost.
 	//nStart := london.Graph["290"] // West Hampstead
 	//nEnd := london.Graph["185"]   // North Wembley
 
-	for _, edge := range london.Edges {
+	for _, edge := range rawGraph.Edges {
 		if edge.Kind == "Connection" {
 			from := london.Graph[edge.St]
 			to := london.Graph[edge.End]
 
 			//cost := 1.0
 			// Set Cost to be the actual distance between connected nodes
-			n1 := s2.LatLngFromDegrees(from.Lat, from.Lng)
-			n2 := s2.LatLngFromDegrees(to.Lat, to.Lng)
+			n1 := s2.LatLngFromDegrees(from.Raw.Lat, from.Raw.Lng)
+			n2 := s2.LatLngFromDegrees(to.Raw.Lat, to.Raw.Lng)
 			cost := n1.Distance(n2).Degrees()
 
 			// AddEdge will modify the parameter Nodes.  NOTE: bidirectionality..
@@ -161,7 +156,7 @@ func pocUnmarshalLondon() (*NetworkGraph, *net.Node, *net.Node) {
 		}
 	}
 
-	return &london, nStart, nEnd
+	return &rawGraph, &london, nStart, nEnd
 }
 func rn(n int) int { return rand.Intn(n) }
 
@@ -177,16 +172,16 @@ func main() {
 	//-------------------------------------------------------------------------
 	// POC: store and retrieve nodes of the London tube
 	//-------------------------------------------------------------------------
-	london, nStart, nEnd := pocUnmarshalLondon()
+	rawGraph, london, nStart, nEnd := pocUnmarshalLondon()
 
 	//-------------------------------------------------------------------------
 	// POC: store and retrieve nodes
 	//-------------------------------------------------------------------------
-	//pocStoreRetrieveNodes()
+	pocStoreRetrieveNodes(rawGraph, "london1234")
 
 	// Generate the path.  p is the slice of nodes
 	pathNodes, dist, pathFound := net.GeneratePath(nStart, nEnd)
-	fmt.Fprintf(os.Stderr, "%s to %s, dist: %f\n", nStart.Label, nEnd.Label, dist)
+	fmt.Fprintf(os.Stderr, "%s to %s, dist: %f\n", nStart.Raw.Name, nEnd.Raw.Name, dist)
 
 	//-------------------------------------------------------------------------
 	// Render nodes and edges SVG
@@ -198,7 +193,7 @@ func main() {
 	vbMaxX := 0
 	vbMaxY := 0
 	// set viewbox min_x,y and max_x, y
-	for _, n := range london.Nodes {
+	for _, n := range london.Graph {
 		if n.X > 0 {
 			vbMinX = min(vbMinX, n.X)
 			vbMinY = min(vbMinY, n.Y)
@@ -222,29 +217,36 @@ func main() {
 	fenY := []int{vbMinY, vbMinY, vbMaxY, vbMaxY, vbMinY}
 	canvas.Polyline(fenX, fenY, `fill="none"`, `stroke="white"`, `stroke-width:2`)
 
-	// EDGES
-	for _, edge := range london.Edges {
-		if edge.Kind == "Connection" {
-			from := london.Graph[edge.St]
-			to := london.Graph[edge.End]
-			//fmt.Printf("[%s, %s]\n", from, to)
-			canvas.Line(from.X, from.Y, to.X, to.Y, `stroke="skyblue"`, `stroke-width:1`)
+	/*
+		// EDGES
+		for _, edge := range london.RawEdges {
+			if edge.Kind == "Connection" {
+				from := london.Graph[edge.St]
+				to := london.Graph[edge.End]
+				//fmt.Printf("[%s, %s]\n", from, to)
+				canvas.Line(from.X, from.Y, to.X, to.Y, `stroke="skyblue"`, `stroke-width:1`)
+			}
 		}
-	}
+	*/
 
 	// NODES
 	nodeDim := 3
-	for _, n := range london.Nodes {
+	for _, node := range london.Graph {
 		fill := "fill:white"
-		if n.Label == "START" {
+		if node.Label == "START" {
 			fill = "fill:green"
-		} else if n.Label == "END" {
+		} else if node.Label == "END" {
 			fill = "fill:red"
 		}
 		//canvas.Rect(n.X, n.Y, nodeDim, nodeDim, fill)
-		canvas.Circle(n.X, n.Y, nodeDim, fill)
+		canvas.Circle(node.X, node.Y, nodeDim, fill)
 		// Node label
-		//canvas.Text(n.X, n.Y, n.Label, `font-size="8px"`, `fill="red"`)
+		//canvas.Text(n.X, n.Y, n.Name, `font-size="8px"`, `fill="red"`)
+
+		// Draw the edges
+		for _, e := range node.OutTo {
+			canvas.Line(e.From.X, e.From.Y, e.To.X, e.To.Y, `stroke="skyblue"`, `stroke-width:1`)
+		}
 	}
 
 	// A* results

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	svg "github.com/ajstarks/svgo"
 	"github.com/gin-gonic/gin"
 	"github.com/jfinken/gobot-lab/adabot"
+	net "github.com/jfinken/gobot-lab/adabot/network"
 )
 
 var bot *adabot.Robot
@@ -77,16 +77,44 @@ func ServoHandler(ctx *gin.Context) {
 	ctx.String(http.StatusOK, fmt.Sprintf("dir: %s, func: %d\n", dir, fn))
 }
 
-// NetworkHandler handles requests to display the road network, given the netid, in SVG.
-func NetworkHandler(ctx *gin.Context) {
-	// eventually an ID into a sqlite table for a given road network
-	_ = ctx.Param("netid")
+// RenderNetworkHandler handles requests to display the road network, given the netid, in SVG.
+func RenderNetworkHandler(ctx *gin.Context) {
+	networkID := ctx.Param("netid")
+	var graph *net.RawGraph
 
+	// TODO:
+	//	- Decide on the expected data model: is a unique ID stored at the graph level, node level?
+	// 	- Trouble getting data into bolt due to circular references of the Node and Edge structs.
+	//	- So need multiple structs: a Node struct for encoding into Bolt and a Node struct for A*
+
+	err := net.LoadGraph(graph, networkID)
+
+	if err != nil {
+		log.Printf("Network Store err: %s\n", err.Error())
+		ctx.String(http.StatusInternalServerError, fmt.Sprintf("Network Store err.\n"))
+		return
+	}
 	ctx.Writer.Header().Set("Content-Type", "image/svg+xml")
-	s := svg.New(ctx.Writer)
-	s.Start(500, 500)
-	s.Circle(250, 250, 125, "fill:none;stroke:black")
-	s.End()
+
+	// FIXME
+	//net.RenderGraph(ctx.Writer, graph)
+}
+
+// StoreNetworkHandler stores the bound json payload to local storage.
+// curl -H "Content-Type: application/json" --data @body.json http://localhost:8181/api/v1/network/:netid"
+func StoreNetworkHandler(ctx *gin.Context) {
+	var graph *net.RawGraph
+	netID := ctx.Param("netid")
+	// This will infer what binder to use depending on the content-type header.
+	if ctx.Bind(&graph) == nil {
+		err := net.StoreGraph(graph, netID)
+		if err != nil {
+			log.Printf("Network Store err: %s\n", err.Error())
+		}
+
+	} else {
+		ctx.String(http.StatusBadRequest, fmt.Sprintf("malformed data\n"))
+	}
 }
 func main() {
 
@@ -96,7 +124,8 @@ func main() {
 	router.GET("/health", HealthHandler)
 	router.GET("/api/v1/tread/dir/:dir/duration/:dur", TreadHandler)
 	router.GET("/api/v1/pod/dir/:dir/func/:func", ServoHandler)
-	router.GET("/api/v1/network/:netid", NetworkHandler)
+	router.GET("/api/v1/network/:netid", RenderNetworkHandler)
+	router.POST("/api/v1/network/:netid", StoreNetworkHandler)
 	router.LoadHTMLGlob("./html/*.html")
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)

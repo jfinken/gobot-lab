@@ -1,45 +1,33 @@
 package network
 
 import (
-	"github.com/boltdb/bolt"
-	"github.com/timshannon/bolthold"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 )
 
-// Store abstracts the backend datastore
-type Store struct {
-	*bolthold.Store
+var cacheFile = "./.cache.%s.json"
+
+// StoreGraph will store the entire graph structure with netID
+func StoreGraph(data *RawGraph, netID string) error {
+	// quite simply write to file
+	toCache, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(fmt.Sprintf(cacheFile, netID), toCache, 0644)
+	return err
 }
 
-var boltdbFile = "./netdb"
-
-// OpenStore will open the backend datastore
-func OpenStore() (*Store, error) {
-	store, err := bolthold.Open(boltdbFile, 0666, nil)
-	return &Store{store}, err
-}
-
-// Update will store the given slice of Nodes each with key Node.ID
-func (s *Store) Update(data []*Node) error {
-	err := s.Bolt().Update(func(tx *bolt.Tx) error {
-		for i := range data {
-			err := s.TxInsert(tx, data[i].ID, data[i])
-			if err != nil {
-				return err
-			}
+// LoadGraph retrieves all nodes, for the given ID, from the store.
+func LoadGraph(data *RawGraph, netID string) error {
+	// very simply load cached file
+	content, err := ioutil.ReadFile(fmt.Sprintf(cacheFile, netID))
+	if err == nil {
+		err = json.Unmarshal(content, data)
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+	}
 	return err
-}
-
-// Query retrieves all nodes, for the given ID, from the store.
-func (s *Store) Query(result []*Node, netID string) error {
-
-	err := s.Find(&result, bolthold.Where("NetID").Eq(netID))
-	return err
-}
-
-// Close will close the backend datastore.
-func (s *Store) CloseStore() error {
-	return s.Close()
 }

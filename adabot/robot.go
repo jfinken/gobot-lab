@@ -47,25 +47,9 @@ func NewRobot() (*Robot, error) {
 	adaFruit.Start()
 
 	/*
-		// Workaround: now it's Metal..
-		gbot := gobot.NewMaster()
-		r := raspi.NewAdaptor()
-		adaFruit := i2c.NewAdafruitMotorHatDriver(r)
-		robot := gobot.NewRobot("adabot",
-			[]gobot.Connection{r},
-			[]gobot.Device{adaFruit},
-			nil, // nil work func
-		)
-		*
-		gbot.AddRobot(robot)
-		// effectively init
-		robot.Start()
-	*/
-
-	// Custom init for attached servo hat and motors
-	// Changing from the default 0x40 address because this configuration involves
-	// a Servo HAT stacked on top of a DC/Stepper Motor HAT on top of the Pi.
-	/*
+		// Custom init for attached servo hat and motors
+		// Changing from the default 0x40 address because this configuration involves
+		// a Servo HAT stacked on top of a DC/Stepper Motor HAT on top of the Pi.
 		stackedHatAddr := 0x41
 
 		// update the I2C address state

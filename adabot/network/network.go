@@ -28,16 +28,42 @@ import (
 type GobotWorld struct {
 	//	nodes map[int]*Node		// not yet used
 }
+type RawGraph struct {
+	Nodes []*RawNode `json:"nodes"`
+	Edges []*RawEdge `json:"edges"`
+	NetID string
+}
+type NetworkGraph struct {
+	Graph map[string]*Node
+}
+
+// RawEdge is london dataset-specific but is intended to be marshaled
+// to and from key/value storage (no circular references).
+type RawEdge struct {
+	ID   string `json:"key"`
+	St   string `json:"end1key"`
+	End  string `json:"end2key"`
+	Kind string `json:"kind"`
+}
+
+// RawNode is london dataset-specific but is intended to be marshaled
+// to and from key/value storage (no circular references).
+type RawNode struct {
+	ID   string  `json:"key"`
+	Name string  `json:"name"`
+	Lat  float64 `json:"latitude"`
+	Lng  float64 `json:"longitude"`
+	X    float64 `json:"x"`
+	Y    float64 `json:"y"`
+	Z    float64 `json:"z"`
+}
 
 // Edge type connects two Nodes with a cost.
 type Edge struct {
-	ID   string `json:"key"` // London dataset-specific
+	Raw  *RawEdge
 	From *Node
 	To   *Node
-	St   string  `json:"end1key"` // London dataset-specific
-	End  string  `json:"end2key"` // London dataset-specific
-	Cost float64 `json:"cost"`
-	Kind string  `json:"kind"` // London dataset-specific
+	Cost float64
 }
 
 // A Node is a place in a grid which implements Pather.  ID is a unique
@@ -46,20 +72,18 @@ type Edge struct {
 // X and Y are the coordinates of the node.  OutTo is a slice of type
 // Edge going to other nodes.
 type Node struct {
-	ID    string `json:"key"` // London dataset-specific
-	NetID string
-	X     int     `json:"x"`
-	Y     int     `json:"y"`
-	OutTo []Edge  `json:"out_to"`
-	Label string  `json:"name"` // London dataset-specific
-	Lat   float64 `json:"latitude"`
-	Lng   float64 `json:"longitude"`
+	Raw   *RawNode
+	ID    string
+	X     int
+	Y     int
+	OutTo []Edge
+	Label string
 }
 
 // AddNode constructs a new Node.
-func AddNode(x, y int, netID, label string) *Node {
+func AddNode(x, y int, rawNode *RawNode, label string) *Node {
 
-	t1 := &Node{X: x, Y: y, NetID: netID, Label: label}
+	t1 := &Node{X: x, Y: y, Raw: rawNode, Label: label}
 
 	now := time.Now().UnixNano()
 	data := []byte(strconv.FormatInt(now, 10))
@@ -140,4 +164,87 @@ func (w GobotWorld) RenderPath(path []astar.Pather) string {
 		}
 	}
 	return s
+}
+
+/*
+// RenderPath will render the nodes and edges to SVG
+func RenderPath(w io.Writer, graph *RawGraph) {
+
+	processed := processRawGraph(graph)
+
+	width := 2048
+	height := 2048
+	vbMinX := 1024 * 1024 * 1024 //math.MaxInt64
+	vbMinY := 1024 * 1024 * 1024 //math.MaxInt64
+	vbMaxX := 0
+	vbMaxY := 0
+	// set viewbox min_x,y and max_x, y
+	for _, n := range graph.Graph {
+		if n.X > 0 {
+			vbMinX = min(vbMinX, n.X)
+			vbMinY = min(vbMinY, n.Y)
+
+			vbMaxX = max(vbMaxX, n.X)
+			vbMaxY = max(vbMaxY, n.Y)
+		}
+	}
+	//fmt.Printf("ViewBox: %d, %d, %d, %d\n", vbMinX, vbMinY, vbMaxX, vbMaxY)
+
+	canvas := svg.New(w)
+	// Given the wide-ranging data extents, specify a viewbox: minX, minY, vbWidth, vbHeight
+	viewBox := fmt.Sprintf(`viewBox="%d %d %d %d"`,
+		vbMinX, vbMinY, (vbMaxX - vbMinX), (vbMaxY - vbMinY))
+	aspect := `preserveAspectRatio="xMidYMid meet"`
+	canvas.Start(width, height, viewBox, aspect)
+	canvas.Rect(vbMinX, vbMinY, (vbMaxX - vbMinX), (vbMaxY - vbMinY), "fill:dimgray")
+
+	// draw fence
+	fenX := []int{vbMinX, vbMaxX, vbMaxX, vbMinX, vbMinX}
+	fenY := []int{vbMinY, vbMinY, vbMaxY, vbMaxY, vbMinY}
+	canvas.Polyline(fenX, fenY, `fill="none"`, `stroke="white"`, `stroke-width:2`)
+
+	// EDGES
+	//	for _, edge := range graph.Edges {
+	//		if edge.Kind == "Connection" {
+	//			from := graph.Graph[edge.St]
+	//			to := graph.Graph[edge.End]
+	//			//fmt.Printf("[%s, %s]\n", from, to)
+	//			canvas.Line(from.X, from.Y, to.X, to.Y, `stroke="skyblue"`, `stroke-width:1`)
+	//		}
+	//	}
+
+	// Processed NODES and EDGES
+	nodeDim := 3
+	for _, node := range graph.Graph {
+		fill := "fill:white"
+		if node.Label == "START" {
+			fill = "fill:green"
+		} else if node.Label == "END" {
+			fill = "fill:red"
+		}
+		// Draw the node
+		//canvas.Rect(n.X, n.Y, nodeDim, nodeDim, fill)
+		canvas.Circle(node.X, node.Y, nodeDim, fill)
+		// Node label
+		//canvas.Text(n.X, n.Y, n.Name, `font-size="8px"`, `fill="red"`)
+
+		// Draw the edges
+		for _, e := range node.OutTo {
+			canvas.Line(e.From.X, e.From.Y, e.To.X, e.To.Y, `stroke="skyblue"`, `stroke-width:1`)
+		}
+	}
+	canvas.End()
+}
+*/
+func min(a, b int) int {
+	if a <= b {
+		return a
+	}
+	return b
+}
+func max(a, b int) int {
+	if a >= b {
+		return a
+	}
+	return b
 }
