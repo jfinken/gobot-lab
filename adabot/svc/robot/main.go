@@ -87,7 +87,7 @@ func RenderNetworkHandler(ctx *gin.Context) {
 	// 	- Trouble getting data into bolt due to circular references of the Node and Edge structs.
 	//	- So need multiple structs: a Node struct for encoding into Bolt and a Node struct for A*
 
-	err := net.LoadGraph(graph, networkID)
+	err := graph.Load(networkID)
 
 	if err != nil {
 		log.Printf("Network Store err: %s\n", err.Error())
@@ -107,7 +107,7 @@ func StoreNetworkHandler(ctx *gin.Context) {
 	netID := ctx.Param("netid")
 	// This will infer what binder to use depending on the content-type header.
 	if ctx.Bind(&graph) == nil {
-		err := net.StoreGraph(graph, netID)
+		err := graph.Store(netID)
 		if err != nil {
 			log.Printf("Network Store err: %s\n", err.Error())
 		}
@@ -115,6 +115,41 @@ func StoreNetworkHandler(ctx *gin.Context) {
 	} else {
 		ctx.String(http.StatusBadRequest, fmt.Sprintf("malformed data\n"))
 	}
+}
+
+// StorePlanHandler stores the bound json floorplan
+// curl -H "Content-Type: application/json" --data @body.json http://localhost:8181/api/v1/floorplan/:planid"
+func StorePlanHandler(ctx *gin.Context) {
+	var polys []net.Polygon
+	planID := ctx.Param("planid")
+	// This will infer what binder to use, and unmarshal, depending on the content-type header
+	if ctx.Bind(&polys) == nil {
+		plan := &net.Floorplan{Polygons: polys}
+		err := plan.Store(planID)
+		if err != nil {
+			log.Printf("Plan Store err: %s\n", err.Error())
+		}
+	} else {
+		ctx.String(http.StatusBadRequest, fmt.Sprintf("Plan Store err: malformed data\n"))
+	}
+}
+
+// RenderPlanHandler renders the bound json floorplan
+func RenderPlanHandler(ctx *gin.Context) {
+	planID := ctx.Param("planid")
+	var plan *net.Floorplan
+
+	err := plan.Load(planID)
+
+	if err != nil {
+		log.Printf("Render plan err: %s\n", err.Error())
+		ctx.String(http.StatusInternalServerError, fmt.Sprintf("Render plan err.\n"))
+		return
+	}
+	ctx.Writer.Header().Set("Content-Type", "image/svg+xml")
+
+	// FIXME
+	plan.Render(ctx.Writer)
 }
 func main() {
 
@@ -126,6 +161,8 @@ func main() {
 	router.GET("/api/v1/pod/dir/:dir/func/:func", ServoHandler)
 	router.GET("/api/v1/network/:netid", RenderNetworkHandler)
 	router.POST("/api/v1/network/:netid", StoreNetworkHandler)
+	router.GET("/api/v1/floorplan/:planid", RenderPlanHandler)
+	router.POST("/api/v1/floorplan/:planid", StorePlanHandler)
 	router.LoadHTMLGlob("./html/*.html")
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)

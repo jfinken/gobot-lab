@@ -7,20 +7,27 @@ import (
 )
 
 var cacheFile = "./.cache.%s.json"
+var cache = make(map[string]*Floorplan)
 
-// StoreGraph will store the entire graph structure with netID
-func StoreGraph(data *RawGraph, netID string) error {
-	// quite simply write to file
-	toCache, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(fmt.Sprintf(cacheFile, netID), toCache, 0644)
-	return err
+type LoadStorer interface {
+	Store(id string) error
+	Load(id string) error
 }
 
-// LoadGraph retrieves all nodes, for the given ID, from the store.
-func LoadGraph(data *RawGraph, netID string) error {
+// Store implements part of LoadStorer and will write the entire graph structure with netID
+func (data *RawGraph) Store(netID string) error {
+	return write(data, netID)
+}
+
+// Store implements part of Storer and writes the entire plan structure to memory.
+func (data *Floorplan) Store(planID string) error {
+	// in-memory cache
+	cache[planID] = data
+	return nil
+}
+
+// Load retrieves all nodes, for the given ID, from the store.
+func (data *RawGraph) Load(netID string) error {
 	// very simply load cached file
 	content, err := ioutil.ReadFile(fmt.Sprintf(cacheFile, netID))
 	if err == nil {
@@ -29,5 +36,24 @@ func LoadGraph(data *RawGraph, netID string) error {
 			return err
 		}
 	}
+	return err
+}
+
+// Load retrieves the Floorplan structure from the cache if resident.
+func (data *Floorplan) Load(planID string) error {
+	if val, ok := cache[planID]; ok {
+		data = val
+	} else {
+		return fmt.Errorf("Store: Floorplan not in cache at ID %s", planID)
+	}
+	return nil
+}
+func write(data interface{}, id string) error {
+	// quite simply write to file
+	toCache, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(fmt.Sprintf(cacheFile, id), toCache, 0644)
 	return err
 }

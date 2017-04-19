@@ -2,11 +2,13 @@ package network
 
 import (
 	"fmt"
+	"io"
 	"strconv"
 	"time"
 
 	"crypto/md5"
 
+	"github.com/ajstarks/svgo"
 	"github.com/jfinken/go-astar"
 )
 
@@ -78,6 +80,26 @@ type Node struct {
 	Y     int
 	OutTo []Edge
 	Label string
+}
+
+// Space, Wall and Furn here mirror the static ints in TangoPolygon.class
+const (
+	Space     = iota // 0
+	Wall             // 1
+	Furniture        // 2
+)
+
+// A Polygon holds floor plan polygons
+type Polygon struct {
+	Area     float64     `json:"area"`
+	Layer    int         `json:"layer"`
+	IsClosed bool        `json:"isClosed"`
+	Verts    [][]float64 `json:"vertices2d"`
+}
+
+// A Floorplan defines the polygons that make up a 2D floor plan representation.
+type Floorplan struct {
+	Polygons []Polygon
 }
 
 // AddNode constructs a new Node.
@@ -166,8 +188,8 @@ func (w GobotWorld) RenderPath(path []astar.Pather) string {
 	return s
 }
 
-/*
 // RenderPath will render the nodes and edges to SVG
+/*
 func RenderPath(w io.Writer, graph *RawGraph) {
 
 	processed := processRawGraph(graph)
@@ -236,6 +258,12 @@ func RenderPath(w io.Writer, graph *RawGraph) {
 	canvas.End()
 }
 */
+func (data *Floorplan) Render(w io.Writer) {
+	canvas := svg.New(w)
+	canvas.Start(500, 500)
+	canvas.Circle(250, 250, 125, "fill:none;stroke:black")
+	canvas.End()
+}
 func min(a, b int) int {
 	if a <= b {
 		return a
