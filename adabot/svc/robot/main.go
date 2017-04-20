@@ -167,6 +167,7 @@ func main() {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
+	router.Static("/html", "./html") // to serve local js and css files
 
 	robot, err := adabot.NewRobot()
 	if err != nil {
