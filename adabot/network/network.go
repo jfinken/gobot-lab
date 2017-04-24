@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"time"
 
@@ -11,6 +12,13 @@ import (
 	"github.com/ajstarks/svgo"
 	"github.com/jfinken/go-astar"
 )
+
+// SCALE between meters and pixels. Hardcoded to a reasonable default.
+var SCALE = 100.0
+
+// MinAreaWall suppresses noise
+var MinAreaWall = 0.04
+var MinAreaSpace = 2.0
 
 // astar_client.go implements implements astar.Pather for
 // the sake of testing.  This functionality forms the back end for
@@ -259,9 +267,99 @@ func RenderPath(w io.Writer, graph *RawGraph) {
 }
 */
 func (data *Floorplan) Render(w io.Writer) {
+
 	canvas := svg.New(w)
-	canvas.Start(500, 500)
-	canvas.Circle(250, 250, 125, "fill:none;stroke:black")
+
+	// TBD
+	width := 1024
+	height := 1024
+
+	// 0. Polygon color by type:
+	wallP := `stroke="black"`
+	furnP := `fill="#15A6D9"`
+	spaceP := `fill="#d2d2d2"`
+	backP := `fill="white"`
+
+	// 1. Determine viewbox min_x,y and max_x, y
+	minX := 1024.0 * 1024 * 1024 //math.MaxInt64
+	minY := 1024.0 * 1024 * 1024 //math.MaxInt64
+	maxX := 0.0
+	maxY := 0.0
+	for _, p := range data.Polygons {
+		for _, v := range p.Verts {
+			x := v[0] * SCALE
+			y := v[1] * SCALE * -1 // want Y+ 2D down
+			minX = math.Min(minX, x)
+			minY = math.Min(minY, y)
+
+			maxX = math.Max(maxX, x)
+			maxY = math.Max(maxY, y)
+		}
+	}
+	vbMinX := int(math.Ceil(minX))
+	vbMinY := int(math.Ceil(minY))
+	vbMaxX := int(math.Ceil(maxX))
+	vbMaxY := int(math.Ceil(maxY))
+
+	fmt.Printf("ViewBox: %d, %d, %d, %d\n", vbMinX, vbMinY, vbMaxX, vbMaxY)
+
+	// Given the wide-ranging data extents, specify a viewbox: minX, minY, vbWidth, vbHeight
+	viewBox := fmt.Sprintf(`viewBox="%d %d %d %d"`,
+		vbMinX, vbMinY, (vbMaxX - vbMinX), (vbMaxY - vbMinY))
+	aspect := `preserveAspectRatio="xMidYMid meet"`
+	canvas.Start(width, height, viewBox, aspect)
+	canvas.Rect(vbMinX, vbMinY, (vbMaxX - vbMinX), (vbMaxY - vbMinY), "fill:dimgray")
+
+	// draw fence
+	fenX := []int{vbMinX, vbMaxX, vbMaxX, vbMinX, vbMinX}
+	fenY := []int{vbMinY, vbMinY, vbMaxY, vbMaxY, vbMinY}
+	canvas.Polyline(fenX, fenY, `fill="none"`, `stroke="red"`, `stroke-width:1`)
+
+	// 2. For each polygon, draw by poly.Layer
+	var paint string
+	largestSpaceDrawn := false
+	for _, p := range data.Polygons {
+		// Color by polygon type
+		switch p.Layer {
+		case Wall:
+			// Only draw wall polygons larger than 20cm x 20cm to suppress noise.
+			if math.Abs(p.Area) < MinAreaWall {
+				continue
+			}
+			paint = wallP
+		case Space:
+			if p.Area > 0 {
+				if largestSpaceDrawn && p.Area < MinAreaSpace {
+					continue
+				}
+				largestSpaceDrawn = true
+			}
+			paint = spaceP
+		case Furniture:
+			paint = furnP
+		}
+		if p.Area < 0.0 {
+			paint = backP
+		}
+		// Draw the polygon as an SVG Path:
+		// 	M indicates MoveTo, L indicates LineTo, z indicates close path
+		// 	https://www.w3.org/TR/SVG11/paths.html#PathData
+		path := fmt.Sprintf("M %0.2f %0.2f ", p.Verts[0][0]*SCALE, p.Verts[0][1]*SCALE*-1)
+
+		for i := 1; i < len(p.Verts); i++ {
+			v := p.Verts[i]
+			// NOTE: We need to flip the Y axis since the polygon data is in ProjectTango start of
+			// service frame (Y+ forward) and we want to draw image coordinates (Y+ 2D down).
+			x := int(math.Ceil(v[0] * SCALE))
+			y := int(math.Ceil(v[1] * SCALE * -1))
+
+			path += fmt.Sprintf("L %d, %d ", x, y)
+		}
+		if p.IsClosed {
+			path += fmt.Sprintf("z ")
+		}
+		canvas.Path(path, paint)
+	}
 	canvas.End()
 }
 func min(a, b int) int {

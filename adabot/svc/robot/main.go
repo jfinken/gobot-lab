@@ -139,7 +139,7 @@ func RenderPlanHandler(ctx *gin.Context) {
 	planID := ctx.Param("planid")
 	var plan *net.Floorplan
 
-	err := plan.Load(planID)
+	plan, err := plan.Load(planID)
 
 	if err != nil {
 		log.Printf("Render plan err: %s\n", err.Error())

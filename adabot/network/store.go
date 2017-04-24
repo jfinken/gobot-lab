@@ -9,9 +9,10 @@ import (
 var cacheFile = "./.cache.%s.json"
 var cache = make(map[string]*Floorplan)
 
+// LoadStorer as interface is still WIP
 type LoadStorer interface {
 	Store(id string) error
-	Load(id string) error
+	Load(id string) (*Floorplan, error)
 }
 
 // Store implements part of LoadStorer and will write the entire graph structure with netID
@@ -40,13 +41,14 @@ func (data *RawGraph) Load(netID string) error {
 }
 
 // Load retrieves the Floorplan structure from the cache if resident.
-func (data *Floorplan) Load(planID string) error {
+func (data *Floorplan) Load(planID string) (*Floorplan, error) {
 	if val, ok := cache[planID]; ok {
 		data = val
+		fmt.Printf("Loaded: num polygons: %d\n", len(data.Polygons))
 	} else {
-		return fmt.Errorf("Store: Floorplan not in cache at ID %s", planID)
+		return nil, fmt.Errorf("Store: Floorplan not in cache at ID %s", planID)
 	}
-	return nil
+	return data, nil
 }
 func write(data interface{}, id string) error {
 	// quite simply write to file
