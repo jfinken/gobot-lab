@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+<link rel="stylesheet" href="html/jquery.mobile-1.4.5.min.css">
+<script src="html/platform.js"></script>
+<script src="html/jquery-1.11.3.min.js"></script>
+<script src="html/jquery.mobile-1.4.5.min.js"></script>
+<script>
+</script>
+<script>
+url = 'ws://localhost:8181/ws';
+c = new WebSocket(url);
+
+send = function(data){
+  c.send(data)
+}
+
+// on message received
+c.onmessage = function(msg){
+  $("#wsoutput").html(msg.data)
+  //console.log(msg)
+}
+
+c.onopen = function(){
+  setInterval( 
+    function(){ send("fplan1234") }    // plan-ID
+  , 1000 )
+}
+</script>
+</head>
+<body>
+<pre id="wsoutput"></pre>
+</body>
+</html>

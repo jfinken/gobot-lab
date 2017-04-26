@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/jfinken/gobot-lab/adabot"
 	net "github.com/jfinken/gobot-lab/adabot/network"
 )
@@ -148,8 +150,42 @@ func RenderPlanHandler(ctx *gin.Context) {
 	}
 	ctx.Writer.Header().Set("Content-Type", "image/svg+xml")
 
-	// FIXME
+	// Render the plan directly to the http-writer
 	plan.Render(ctx.Writer)
+}
+
+var wsupgrader = websocket.Upgrader{}
+
+// wsHandler upgrades the gin connection, reads the incoming message
+// (expected to be a planID) renders the floorplan as SVG to a string
+// buffer then writes that string to the socket.
+func wsHandler(ctx *gin.Context) {
+	w := ctx.Writer
+	r := ctx.Request
+	w.Header().Set("Content-Type", "image/svg+xml")
+
+	conn, err := wsupgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Printf("Failed to set websocket upgrade: %+v\n", err)
+		return
+	}
+	for {
+		t, msg, err := conn.ReadMessage()
+		if err != nil {
+			break
+		}
+		// TODO: validate the input msg
+		var plan *net.Floorplan
+		plan, err = plan.Load(string(msg))
+		if err != nil {
+			fmt.Printf("Failed to render plan: %s\n", string(msg))
+			break
+		}
+		// Render the floorplan to a local string buffer
+		buf := new(bytes.Buffer)
+		plan.Render(buf)
+		conn.WriteMessage(t, []byte(buf.String()))
+	}
 }
 func main() {
 
@@ -163,9 +199,13 @@ func main() {
 	router.POST("/api/v1/network/:netid", StoreNetworkHandler)
 	router.GET("/api/v1/floorplan/:planid", RenderPlanHandler)
 	router.POST("/api/v1/floorplan/:planid", StorePlanHandler)
+	router.GET("/ws", wsHandler)
 	router.LoadHTMLGlob("./html/*.html")
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
+	})
+	router.GET("/fp", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "fp.html", nil)
 	})
 	router.Static("/html", "./html") // to serve local js and css files
 
