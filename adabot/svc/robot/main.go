@@ -27,32 +27,39 @@ func HealthHandler(ctx *gin.Context) {
 
 // TreadHandler is the handler that is expected to receive a direction and duration in seconds.
 // examples:
-//  curl host:8181/api/v1/tread/dir/forward/duration/5
-//  curl host:8181/api/v1/tread/dir/left/duration/2
-//  curl host:8181/api/v1/tread/dir/right/duration/2
-//  curl host:8181/api/v1/tread/dir/backward/duration/5
+//  curl host:8181/api/v1/tread/dir/stop
+//  curl host:8181/api/v1/tread/dir/forward
+//  curl host:8181/api/v1/tread/dir/left
+//  curl host:8181/api/v1/tread/dir/right
+//  curl host:8181/api/v1/tread/dir/backward
 func TreadHandler(ctx *gin.Context) {
 	dir := ctx.Param("dir")
-	duration := ctx.Param("dur")
+	//duration := ctx.Param("dur")
 
-	sec, err := strconv.Atoi(duration)
-	if err != nil {
-		errMsg := fmt.Sprintf("PARAM: %s", err.Error())
-		ctx.String(http.StatusBadRequest, errMsg)
-		return
-	}
+	/*
+		sec, err := strconv.Atoi(duration)
+		if err != nil {
+			errMsg := fmt.Sprintf("PARAM: %s", err.Error())
+			ctx.String(http.StatusBadRequest, errMsg)
+			return
+		}
+	*/
 	// TODO: validate the directions
+	noop := -1
 	switch dir {
+	case "stop":
+		bot.Stop()
 	case "forward":
-		bot.Forward(sec)
+		bot.Forward(noop)
 	case "backward":
-		bot.Backward(sec)
+		bot.Backward(noop)
 	case "left":
-		bot.Left(sec)
+		bot.Left(noop)
 	case "right":
-		bot.Right(sec)
+		bot.Right(noop)
 	}
-	ctx.String(http.StatusOK, fmt.Sprintf("dir: %s, duration: %s\n", dir, duration))
+	//ctx.String(http.StatusOK, fmt.Sprintf("dir: %s, duration: %s\n", dir, duration))
+	ctx.String(http.StatusOK, fmt.Sprintf("dir: %s\n", dir))
 }
 
 // ServoHandler handles requests to control the two servo motors charged with yaw/pitch
@@ -193,7 +200,8 @@ func main() {
 	router.Use(gin.Logger())
 
 	router.GET("/health", HealthHandler)
-	router.GET("/api/v1/tread/dir/:dir/duration/:dur", TreadHandler)
+	//router.GET("/api/v1/tread/dir/:dir/duration/:dur", TreadHandler)
+	router.GET("/api/v1/tread/dir/:dir", TreadHandler)
 	router.GET("/api/v1/pod/dir/:dir/func/:func", ServoHandler)
 	router.GET("/api/v1/network/:netid", RenderNetworkHandler)
 	router.POST("/api/v1/network/:netid", StoreNetworkHandler)

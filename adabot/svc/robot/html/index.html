@@ -9,51 +9,67 @@
 <script>
 var TREAD_URL = window.location.origin+'/api/v1/tread'
 var POD_URL   = window.location.origin+'/api/v1/pod'
-var LONG_DUR  = 3;
-var SHORT_DUR = 1;
+window.oncontextmenu = function(event) {
+     event.preventDefault();
+     event.stopPropagation();
+     return false;
+};
 jQuery(document).ready(function() {
     // FORWARD
-    $('#long-fwd').click(function() {
-        $.get(TREAD_URL.concat('/dir/forward/duration/', LONG_DUR), function(data) {
+    $('#long-fwd').on('touchstart mousedown', function() {
+        $.get(TREAD_URL.concat('/dir/forward'), function(data) {
+        });
+    });
+    $('#long-fwd').on('touchend mouseup', function() {
+        $.get(TREAD_URL.concat('/dir/stop'), function(data) {
+        });
+    });
+    // LEFT
+    $('#long-left').on('touchstart mousedown', function() {
+        $.get(TREAD_URL.concat('/dir/left'), function(data) {
+        });
+    });
+    $('#long-left').on('touchend mouseup', function() {
+        $.get(TREAD_URL.concat('/dir/stop'), function(data) {
+        });
+    });
+    // RIGHT
+    $('#long-right').on('touchstart mousedown', function() {
+        $.get(TREAD_URL.concat('/dir/right'), function(data) {
+        });
+    });
+    $('#long-right').on('touchend mouseup', function() {
+        $.get(TREAD_URL.concat('/dir/stop'), function(data) {
         });
     });
     
-    $('#short-fwd').click(function() {
-        $.get(TREAD_URL.concat('/dir/forward/duration/', SHORT_DUR), function(data) {
+    // BACKWARD
+    $('#long-back').on('touchstart mousedown', function() {
+        $.get(TREAD_URL.concat('/dir/backward'), function(data) {
         });
     });
-
-    // LEFT
-    $('#long-left').click(function() {
-        $.get(TREAD_URL.concat('/dir/left/duration/', LONG_DUR), function(data) {
+    $('#long-back').on('touchend mouseup', function() {
+        $.get(TREAD_URL.concat('/dir/stop'), function(data) {
+        });
+    });
+    /* 
+    $('#short-fwd').click(function() {
+        $.get(TREAD_URL.concat('/dir/forward/duration/', SHORT_DUR), function(data) {
         });
     });
     $('#short-left').click(function() {
         $.get(TREAD_URL.concat('/dir/left/duration/', SHORT_DUR), function(data) {
         });
     });
-    
-    // RIGHT
-    $('#long-right').click(function() {
-        $.get(TREAD_URL.concat('/dir/right/duration/', LONG_DUR), function(data) {
-        });
-    });
     $('#short-right').click(function() {
         $.get(TREAD_URL.concat('/dir/right/duration/', SHORT_DUR), function(data) {
         });
     });
-    
-    // BACKWARD
-    $('#long-back').click(function() {
-        $.get(TREAD_URL.concat('/dir/backward/duration/', LONG_DUR), function(data) {
-        });
-    });
-    
     $('#short-back').click(function() {
         $.get(TREAD_URL.concat('/dir/backward/duration/', SHORT_DUR), function(data) {
         });
     });
-    
+    */
     // POD CONTROL
     $('#pitch-up').click(function() {
         $.get(POD_URL.concat('/dir/pitch/func/1'), function(data) {
@@ -98,7 +114,7 @@ jQuery(document).ready(function() {
       <div class="ui-block-a"></div>
       <div class="ui-block-b"></div>
       <div class="ui-block-c">
-        <a id="short-fwd" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-u" rel="external"></a>
+        <!--<a id="short-fwd" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-u" rel="external"></a>-->
       </div>
       <div class="ui-block-d"></div>
       <div class="ui-block-e"></div>
@@ -110,13 +126,13 @@ jQuery(document).ready(function() {
         <a id="long-left" href="#" class="ui-btn ui-btn-icon-notext ui-icon-arrow-l"></a>
       </div>
       <div class="ui-block-b">
-        <a id="short-left" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-l"></a>
+        <!--<a id="short-left" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-l"></a>-->
       </div>
     
       <!-- RIGHT -->
       <div class="ui-block-c"></div>
       <div class="ui-block-d">
-        <a id="short-right" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-r"></a>
+        <!--<a id="short-right" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-r"></a>-->
       </div>
       <div class="ui-block-e">
         <a id="long-right" href="#" class="ui-btn ui-btn-icon-notext ui-icon-arrow-r"></a>
@@ -128,7 +144,7 @@ jQuery(document).ready(function() {
       <div class="ui-block-a"></div>
       <div class="ui-block-b"></div>
       <div class="ui-block-c">
-        <a id="short-back" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-d"></a>
+        <!--<a id="short-back" href="#" class="ui-btn ui-btn-icon-notext ui-icon-carat-d"></a>-->
       </div>
       <div class="ui-block-d"></div>
       <div class="ui-block-e"></div>

@@ -7,5 +7,6 @@ all:
 	GOARM=7 GOARCH=arm GOOS=linux go build -v 
 	# Pi 2
 	#GOARM=6 GOARCH=arm GOOS=linux go build -v 
-	scp robot pi@192.168.0.2:~/robot-svc
-	scp -r html pi@192.168.0.2:~/
+	# scp robot pi@192.168.0.2:~/robot-svc
+	scp robot pi@10.0.0.75:~/robot-svc
+	scp -r html pi@10.0.0.75:~/
